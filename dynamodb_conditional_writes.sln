@@ -1,0 +1,54 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26124.0
+MinimumVisualStudioVersion = 15.0.26124.0
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B33A5C74-3AA3-43B1-A386-818D6C1F5382}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Equinox.DynamoDB", "src\Equinox.DynamoDB\Equinox.DynamoDB.fsproj", "{A8FD8339-C32E-4A35-A5DF-C0F635E6747D}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Equinox.DynamoDB.Tests", "src\Equinox.DynamoDB.Tests\Equinox.DynamoDB.Tests.fsproj", "{CE67183D-2DA2-4009-A577-F1C249B6060C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A8FD8339-C32E-4A35-A5DF-C0F635E6747D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8FD8339-C32E-4A35-A5DF-C0F635E6747D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8FD8339-C32E-4A35-A5DF-C0F635E6747D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A8FD8339-C32E-4A35-A5DF-C0F635E6747D}.Debug|x64.Build.0 = Debug|Any CPU
+		{A8FD8339-C32E-4A35-A5DF-C0F635E6747D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A8FD8339-C32E-4A35-A5DF-C0F635E6747D}.Debug|x86.Build.0 = Debug|Any CPU
+		{A8FD8339-C32E-4A35-A5DF-C0F635E6747D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8FD8339-C32E-4A35-A5DF-C0F635E6747D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8FD8339-C32E-4A35-A5DF-C0F635E6747D}.Release|x64.ActiveCfg = Release|Any CPU
+		{A8FD8339-C32E-4A35-A5DF-C0F635E6747D}.Release|x64.Build.0 = Release|Any CPU
+		{A8FD8339-C32E-4A35-A5DF-C0F635E6747D}.Release|x86.ActiveCfg = Release|Any CPU
+		{A8FD8339-C32E-4A35-A5DF-C0F635E6747D}.Release|x86.Build.0 = Release|Any CPU
+		{CE67183D-2DA2-4009-A577-F1C249B6060C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE67183D-2DA2-4009-A577-F1C249B6060C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE67183D-2DA2-4009-A577-F1C249B6060C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CE67183D-2DA2-4009-A577-F1C249B6060C}.Debug|x64.Build.0 = Debug|Any CPU
+		{CE67183D-2DA2-4009-A577-F1C249B6060C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CE67183D-2DA2-4009-A577-F1C249B6060C}.Debug|x86.Build.0 = Debug|Any CPU
+		{CE67183D-2DA2-4009-A577-F1C249B6060C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE67183D-2DA2-4009-A577-F1C249B6060C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE67183D-2DA2-4009-A577-F1C249B6060C}.Release|x64.ActiveCfg = Release|Any CPU
+		{CE67183D-2DA2-4009-A577-F1C249B6060C}.Release|x64.Build.0 = Release|Any CPU
+		{CE67183D-2DA2-4009-A577-F1C249B6060C}.Release|x86.ActiveCfg = Release|Any CPU
+		{CE67183D-2DA2-4009-A577-F1C249B6060C}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A8FD8339-C32E-4A35-A5DF-C0F635E6747D} = {B33A5C74-3AA3-43B1-A386-818D6C1F5382}
+		{CE67183D-2DA2-4009-A577-F1C249B6060C} = {B33A5C74-3AA3-43B1-A386-818D6C1F5382}
+	EndGlobalSection
+EndGlobal
