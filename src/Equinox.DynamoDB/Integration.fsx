@@ -15,7 +15,7 @@ let table = createtableContext client tableName
 
 let maxBytes = 600
 let decide = decideOperation maxBytes
-let state = StreamState.Empty
+let state = BatchState.Empty
 let events = [| "event1"; "event2" |]
 let decision = decide state events
 

@@ -2,9 +2,20 @@
 
 type Event = string
 
-type StreamState =
-    | Empty
-    | Events of totalSize : int * etag: string
+type BatchInfo = {
+    StreamName: string
+    CurrentOffset: int64
+    PreviousOffset: int64 option
+    TotalSize: int
+    Etag: string
+}
+
+type Empty = BatchInfo
+
+type BatchState =
+    | Empty of streamName:string
+    | Events of batchInfo: BatchInfo
+
 
 type Decision =
     | NoOp
@@ -12,8 +23,9 @@ type Decision =
     | AppendToCurrent of events: Event[] * etag: string
     | Overflow of appendToCurrent: Event[] * insertNext: Event[] * etag: string
 
+
 module Events = 
-    let decideOperation (maxBytes : int) (currentState : StreamState) (newEvents : Event[]) =
+    let decideOperation (maxBytes : int) (currentState : BatchState) (newEvents : Event[]) =
         let rec split currentSize buffer (events : string[]) : string[] * string[] =
             let h, t = Array.head events, Array.tail events
             let thisSize = h.Length
@@ -24,16 +36,17 @@ module Events =
         match newEvents with
             | [||] -> NoOp
             | events -> match currentState with
-                        | StreamState.Empty -> InsertFirstDocument events
-                        | StreamState.Events (currentSize,etag) when currentSize >= maxBytes -> Overflow ([||], events, etag)
-                        | StreamState.Events (currentSize,etag) ->
-                            match split currentSize [||] events with
-                            | buffer, [||] -> AppendToCurrent (buffer, etag)
-                            | buffer, overflow -> Overflow (buffer, overflow, etag)
-
+                        | BatchState.Empty stream-> InsertFirstDocument events
+                        | BatchState.Events info ->
+                            match split info.TotalSize [||] events with
+                            | buffer, [||] -> AppendToCurrent (buffer, info.Etag)
+                            | buffer, overflow -> Overflow (buffer, overflow, info.Etag)
+    
 module Effects = 
     open FSharp.AWS.DynamoDB
     open System
+    
+    type Batch = Event[] * BatchInfo
 
     type Entry =
        {
