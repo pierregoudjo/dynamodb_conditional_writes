@@ -4,6 +4,7 @@ open Xunit
 open Swensen.Unquote
 open Equinox.DynamoDB
 open Equinox.DynamoDB.Events
+open Equinox.DynamoDB.Effects
 
 let maxBytes = 600
 let decide = decideOperation maxBytes
@@ -12,10 +13,14 @@ let streamName = "stream1"
 
 [<Fact>]
 let ``Initial write`` () =
-    let state = BatchState.Empty streamName
+    let state = StreamState.Empty streamName
     let events = [| "event1"; "event2" |]
-    let result = decide state events
-    test <@ result = Decision.InsertFirstDocument events @>
+
+    let decision = decide state events
+    let commands = matchDecision decision
+
+    test <@ decision = InsertFirstDocument (events, streamName)@>
+    test <@ commands = [|Start (events, streamName)|]@>
 
 
 [<Fact>]
@@ -24,13 +29,17 @@ let ``Append`` () =
         StreamName=streamName 
         CurrentOffset=int64(1) 
         PreviousOffset= None 
-        TotalSize=0 
+        TotalSize=3 
         Etag="abcd"
     }
-    let state = BatchState.Events batchInfo
+    let state = StreamState.Events batchInfo
     let newEvents = [| "event3"; "event4" |]
-    let result = decide state newEvents
-    test <@ result = Decision.AppendToCurrent (newEvents, "abcd") @>
+
+    let decision = decide state newEvents
+    let commands = matchDecision decision
+
+    test <@ decision = AppendToCurrent (newEvents, batchInfo) @>
+    test <@ commands = [|Update (newEvents, batchInfo)|]@>
 
 
 [<Fact>]
@@ -42,11 +51,14 @@ let ``Current is Full`` () =
         TotalSize=maxBytes
         Etag="abcd"
     }
-    let state = BatchState.Events batchInfo
+    let state = StreamState.Events batchInfo
     let newEvents = [| "eventBlob"; "eventBlob2" |]
-    let result = decide state newEvents
-    test <@ result = Decision.Overflow ([||], newEvents, "abcd") @>
 
+    let decision = decide state newEvents
+    let commands = matchDecision decision
+
+    test <@ decision = Overflow ([||], newEvents, batchInfo) @>
+    test <@ commands = [|Update ([||], batchInfo); Next (newEvents, batchInfo)|]@>
 
 [<Fact>]
 let ``Inserts Straddle two Documents`` () =
@@ -57,11 +69,15 @@ let ``Inserts Straddle two Documents`` () =
         TotalSize= maxBytes - "eventBlob".Length - 3
         Etag="abcd"
     }
-    let state = BatchState.Events batchInfo
+    let state = StreamState.Events batchInfo
     let event1, event2 = "eventBlob", "eventBlob2"
     let newEvents = [| event1; event2 |]
-    let result = decide state newEvents
-    test <@ result = Decision.Overflow ([| event1 |], [| event2 |], "abcd") @>
+
+    let decision = decide state newEvents
+    let commands = matchDecision decision
+
+    test <@ decision = Overflow ([| event1 |], [| event2 |], batchInfo) @>
+    test <@ commands = [|Update ([| event1 |], batchInfo); Next ([|event2|], batchInfo)|]@>
 
 
 
@@ -74,6 +90,9 @@ let ``Insert empty events`` () =
         TotalSize= maxBytes - "eventBlob".Length - 3
         Etag="abcd"
     }
-    let state = BatchState.Events batchInfo
-    let result = decide state [||]
-    test <@ result = Decision.NoOp @>
+    let state = StreamState.Events batchInfo
+    let decision = decide state [||]
+    let commands = matchDecision decision
+    test <@ decision = Decision.NoOp @>
+    test <@ commands = [|Command.Idle|] @>
+    

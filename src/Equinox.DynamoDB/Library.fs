@@ -12,20 +12,20 @@ type BatchInfo = {
 
 type Empty = BatchInfo
 
-type BatchState =
+type StreamState =
     | Empty of streamName:string
-    | Events of batchInfo: BatchInfo
+    | Events of currentBatchInfo: BatchInfo
 
 
 type Decision =
     | NoOp
-    | InsertFirstDocument of Event[]
-    | AppendToCurrent of events: Event[] * etag: string
-    | Overflow of appendToCurrent: Event[] * insertNext: Event[] * etag: string
+    | InsertFirstDocument of events: Event[] * streamName: string
+    | AppendToCurrent of events: Event[] * currentBatch: BatchInfo
+    | Overflow of appendToCurrent: Event[] * insertNext: Event[] * batch: BatchInfo
 
 
 module Events = 
-    let decideOperation (maxBytes : int) (currentState : BatchState) (newEvents : Event[]) =
+    let decideOperation (maxBytes : int) (currentState : StreamState) (newEvents : Event[]) =
         let rec split currentSize buffer (events : string[]) : string[] * string[] =
             let h, t = Array.head events, Array.tail events
             let thisSize = h.Length
@@ -36,39 +36,70 @@ module Events =
         match newEvents with
             | [||] -> NoOp
             | events -> match currentState with
-                        | BatchState.Empty stream-> InsertFirstDocument events
-                        | BatchState.Events info ->
+                        | StreamState.Empty streamName-> InsertFirstDocument (events, streamName)
+                        | StreamState.Events info ->
                             match split info.TotalSize [||] events with
-                            | buffer, [||] -> AppendToCurrent (buffer, info.Etag)
-                            | buffer, overflow -> Overflow (buffer, overflow, info.Etag)
-    
+                            | buffer, [||] -> AppendToCurrent (buffer, info)
+                            | buffer, overflow -> Overflow (buffer, overflow, info)
 module Effects = 
     open FSharp.AWS.DynamoDB
     open System
-    
-    type Batch = Event[] * BatchInfo
+
+    type Command = 
+        | Idle
+        | Start of events: Event[] * streamName: string
+        | Update of onCurrent: Event[] * info: BatchInfo
+        | Next of nextEvents: Event[] * previousBatchInfo: BatchInfo
+
+    let matchDecision (decision) : Command[]= 
+        match decision with
+        | NoOp -> [|Idle|]
+        | InsertFirstDocument (events, streamName) -> [|Start (events, streamName)|]
+        | AppendToCurrent (events, batch) -> [|Update (events, batch)|]
+        | Overflow (onCurrent, onNext, batch) -> [|Update (onCurrent, batch); Next (onNext, batch)|]
 
     type Entry =
        {
           [<HashKey>]
           EntryID: string
+          [<RangeKey>]
+          Offset: int64
+          PreviousOffset: int64 option
           
           Etag: string
           Events: string array
           LastEventTimeStamp: DateTimeOffset option
        }
 
-    let generateDynamoEffect (tableContext: TableContext<Entry>) (entryID) (decision) = 
-        match decision with
-        | NoOp -> ignore "no value"
-        | InsertFirstDocument events -> 
-            ignore (tableContext.PutItem({
-                EntryID = entryID
-                Etag = System.Guid.NewGuid().ToString()
+    let applyCommand (tableContext: TableContext<Entry>) (command) = 
+        match command with
+        | Idle -> ignore "No action"
+        | Start (events, stream) ->
+            let entry = {
+                EntryID = stream
+                Offset = int64(0)
+                Etag = Guid.NewGuid().ToString()
+                PreviousOffset = None
                 Events = events
                 LastEventTimeStamp = Some DateTimeOffset.Now 
+            }
+            ignore (tableContext.PutItem(entry))
+        | Update (events, info) -> 
+            ignore (
+                tableContext.UpdateItem(TableKey.Combined(info.StreamName, info.CurrentOffset), 
+                    <@ fun r -> {r with Events = Array.append r.Events events } @>, 
+                    precondition = <@ fun r -> r.Etag = info.Etag @>)
+            )
+
+        | Next (next, info) ->
+            ignore (tableContext.PutItem({
+                EntryID = info.StreamName
+                Offset = info.CurrentOffset + int64(1)
+                Etag = Guid.NewGuid().ToString()
+                PreviousOffset = Some info.CurrentOffset
+                Events = next
+                LastEventTimeStamp = Some DateTimeOffset.Now 
             }))
-        | AppendToCurrent (events, etag) -> ignore (tableContext.UpdateItem(TableKey.Hash(entryID), <@ fun r -> {r with Events = Array.append r.Events events } @>, precondition = <@ fun r -> r.Etag = etag @>))
-        | Overflow(appendToCurrent, insertNext, etag) -> failwith "Not Implemented"
 
     let createtableContext client tableName= TableContext.Create<Entry>(client, tableName)
+
