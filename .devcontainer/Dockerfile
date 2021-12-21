@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/vscode/devcontainers/dotnet:0-5.0-focal
+ARG VARIANT="6.0-focal"
+FROM mcr.microsoft.com/vscode/devcontainers/dotnet:${VARIANT}
 
 # [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
 ARG NODE_VERSION="lts/*"

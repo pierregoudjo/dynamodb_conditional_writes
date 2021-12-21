@@ -2,13 +2,16 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.209.6/containers/dotnet-fsharp
 {
 	"name": "F# (.NET)",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"args": {
-			// Options
-			"NODE_VERSION": "none"
-		}
-	},
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/workspace",
+	// "build": {
+	// 	"dockerfile": "Dockerfile",
+	// 	"args": {
+	// 		// Options
+	// 		"NODE_VERSION": "none"
+	// 	}
+	// },
 
 	// Set *default* container specific settings.json values on container create.
 	"settings": {},
@@ -18,6 +21,8 @@
 		"Ionide.Ionide-fsharp",
 		"ms-dotnettools.csharp"
 	],
+
+	"forwardPorts": [8000],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
